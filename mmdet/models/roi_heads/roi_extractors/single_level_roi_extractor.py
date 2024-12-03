@@ -104,8 +104,12 @@ class SingleRoIExtractor(BaseRoIExtractor):
             inds = mask.nonzero(as_tuple=False).squeeze(1)
             if inds.numel() > 0:
                 rois_ = rois[inds]
-                roi_feats_t = self.roi_layers[i](feats[i], rois_)
-                roi_feats[inds] = roi_feats_t
+                if rois_.device.type == "mps":
+                    roi_feats_t = self.roi_layers[i](feats[i].to('cpu'), rois_.to('cpu'))
+                    roi_feats[inds] = roi_feats_t.to('mps')
+                else:
+                    roi_feats_t = self.roi_layers[i](feats[i], rois_)
+                    roi_feats[inds] = roi_feats_t
             else:
                 # Sometimes some pyramid levels will not be used for RoI
                 # feature extraction and this will cause an incomplete

@@ -281,8 +281,12 @@ class RPNHead(AnchorHead):
 
         if results.bboxes.numel() > 0:
             bboxes = get_box_tensor(results.bboxes)
-            det_bboxes, keep_idxs = batched_nms(bboxes, results.scores,
-                                                results.level_ids, cfg.nms)
+            if bboxes.device.type == 'mps': 
+                det_bboxes, keep_idxs = batched_nms(bboxes.to('cpu'), results.scores.to('cpu'),
+                                                    results.level_ids.to('cpu'), cfg.nms)
+            else:
+                det_bboxes, keep_idxs = batched_nms(bboxes, results.scores,
+                                                    results.level_ids, cfg.nms)
             results = results[keep_idxs]
             # some nms would reweight the score, such as softnms
             results.scores = det_bboxes[:, -1]
